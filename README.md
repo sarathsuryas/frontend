@@ -1,5 +1,45 @@
 # Frontend
 
+## Architecture
+
+The app uses a feature-based layout under `src/app`:
+
+```
+src/app/
+├── core/       # app-wide singletons: API client, config tokens, guards, interceptors
+├── shared/     # reusable, feature-agnostic components, directives, pipes, utils
+├── layout/     # route layouts / app shell (header, footer, router outlet)
+├── features/   # business domains, each lazy-loaded through its own *.routes.ts
+└── app.*       # root component, config and route table
+```
+
+The `home` feature is a working example of the pattern.
+
+### Dependency rules
+
+- `features/*` may import from `core` and `shared`, but never from another feature.
+- `core` and `shared` never import from `features`.
+- App-wide singletons belong in `core` with `providedIn: 'root'`; feature state belongs in the
+  feature's `services/` folder and is provided on the feature route so it lives only while the
+  feature is active.
+
+### Adding a feature
+
+1. Create `src/app/features/<name>/<name>.routes.ts` exporting a `Routes` array (e.g. `NAME_ROUTES`).
+2. Add the page under `<name>/<name>-page/` and load it with `loadComponent` from those routes.
+3. Register the feature in `app.routes.ts` with
+   `loadChildren: () => import('./features/<name>/<name>.routes').then((m) => m.NAME_ROUTES)`.
+4. Put feature models in `models/`, feature services in `services/`, and provide them on the route.
+
+### Conventions
+
+- Standalone components, `OnPush` change detection and `inject()` for dependencies (CLI schematic
+  defaults are set in `angular.json`).
+- Signals (`signal`, `computed`) for state; no external state-management library.
+- File naming: `thing.ts` / `thing.html` / `thing.css`, `thing.routes.ts`, `thing.service.ts`,
+  `thing.model.ts`.
+- TypeScript path aliases: `@app/*`, `@core/*`, `@shared/*`, `@layout/*`, `@features/*`.
+
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.39.
 
 ## Development server
